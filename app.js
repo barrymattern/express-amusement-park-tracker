@@ -12,9 +12,9 @@ app.use(morgan('dev'));
 
 app.use(routes);
 app.use((req,res,next) => {
-    const error = new Error("The requests page couldn't be found.");
-    error.status = 404
-    next(error)
+    const err = new Error("The requests page couldn't be found.");
+    err.status = 404
+    next(err)
 })
 
 app.use((err,req,res,next) => {
@@ -26,7 +26,33 @@ app.use((err,req,res,next) => {
     next(err)
 })
 
+app.use((err, req, res, next) => {
+  if (err.status === 404) {
+    res.status(404);
+    res.render('page-not-found', { title: 'Page Not Found' });
+  } else {
+    next(err);
+  }
+});
 
+app.use((err, req, res, next) => {
+  if (!err.status) {
+    res.status(500);
+  } else {
+    res.status(err.status);
+  }
+
+  if (process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'test') {
+    err.message = null;
+    err.stack = null;
+  }
+  
+  res.render('error', {
+    title: 'Server Error',
+    message: err.message,
+    stack : err.stack
+  });
+});
 
 
 module.exports = app;
